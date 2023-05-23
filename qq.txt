@@ -1,0 +1,97 @@
+import PySimpleGUI as sg
+
+# Define layout of UI
+layout = [
+    [sg.Text('Mass and energy balances for multiple reactors')],
+    [sg.Text('Enter the number of reactors: '), sg.InputText()],
+    [sg.Button('Submit'), sg.Button('Exit')],
+]
+
+# Create the window
+window = sg.Window('Reactor Balances', layout)
+
+# Main Infinite Loop for Events in GUI
+while True:
+    event, values = window.read()
+    if event in (sg.WIN_CLOSED, 'Exit'):
+        break
+    elif event == 'Submit':
+        try:
+            # Convert user input to integer
+            num_reactors = int(values[0])
+            
+            # Reactor Values List
+            reactors = []
+            
+            # User input for reactor conditions and inlet conditions for each reactor
+            for x in range(num_reactors):
+                layout2 = [
+                    [sg.Text(f'Reactor {x+1}')],
+                    [sg.Text('Enter volume of reactor (m^3): '), sg.InputText()],
+                    [sg.Text('Enter density of reactor contents (kg/m^3): '), sg.InputText()],
+                    [sg.Text('Enter heat capacity of reactor contents (kJ/kg.K): '), sg.InputText()],
+                    [sg.Text('Enter heat transfer rate (kW): '), sg.InputText()],
+                    [sg.Text('Enter rate of reaction (mol/m^3.s): '), sg.InputText()],
+                    [sg.Text('Enter enthalpy of reaction (kJ/mol): '), sg.InputText()],
+                    [sg.Text('Enter feed rate (mol/s): '), sg.InputText()],
+                    [sg.Text('Enter concentration (mol/m^3): '), sg.InputText()],
+                    [sg.Text('Enter inlet temperature (K): '), sg.InputText()],
+                    [sg.Button('Submit'), sg.Button('Exit')],
+                ]
+                
+                # Create the subwindow
+                window2 = sg.Window(f'Reactor {x+1}', layout2)
+                
+                # Event loop for subwindow
+                while True:
+                    event2, values2 = window2.read()
+                    if event2 in (sg.WIN_CLOSED, 'Exit'):
+                        window2.close()
+                        break
+                    elif event2 == 'Submit':
+                            # Convert user input to float
+                            V = float(values2[0])
+                            rho = float(values2[1])
+                            Cp = float(values2[2])
+                            Q = float(values2[3])
+                            rA = float(values2[4])
+                            Hrxn = float(values2[5])
+                            FA0 = float(values2[6])
+                            CA0 = float(values2[7])
+                            T0 = float(values2[8])
+                            
+                            # Outlet conditions
+                            FB = 0.0  # Exit rate of species B (mol/s)
+                            FC = 0.0  # Exit rate of species C (mol/s)
+                            T = 0.0  # Exit temperature (K)
+
+                            # Mass balance
+                            # F_A0 = F_B + F_C
+                            FB = FC = FA0 - rA*V
+
+                            # Energy balance
+                            # Q = F_A0*Hrxn + m*Cp*(T - T0)
+                            m = round(V*rho,2)
+                            T = round((Q - FA0*Hrxn)/(m*Cp) + T0, 2)
+                            
+                            # Add reactor data to list of reactors
+                            reactors.append([V, rho, Cp, Q, rA, Hrxn, FA0, CA0, T0, FB, FC, T])
+
+                            #Complete calculation as per base formula using enumerate method
+                            for x, r in enumerate(reactors):
+                                Exit_Rate = r[9]
+                                Exit_temperature = r[11]
+                            
+                            sg.popup(f'Reactor {x+1} Output:', f'The Exit temperature is {Exit_temperature} K', f'The Exit rate of species is {Exit_Rate} mol/s')
+
+                            #File handling is done here with output being saved as a text file in the Users base directory
+                            output = f'reactor_{x+1}_output.txt'
+                            with open(output, 'w') as file:
+                                file.write(f'Reactor {x+1} output:\n')
+                                file.write(f'The Exit temperature is {Exit_temperature} K\n')
+                                file.write(f'The Exit rate of species is {Exit_Rate} mol/s\n')
+
+        except:
+            sg.popup(f'Please enter a valid number.')
+            continue
+                
